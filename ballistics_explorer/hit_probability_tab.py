@@ -33,11 +33,12 @@ REST_MAP = {
 def load_builtin_hit_history() -> pd.DataFrame:
     """
     Load the default hit-probability dataset that ships with the app.
-    Adjust filenames if needed.
     """
     candidates = [
+        os.path.join("Data", "hit_probability_semi_realistic.xlsx"),
+        os.path.join("Data", "hit_probability_semi_realistic.csv"),
         "hit_probability_semi_realistic.xlsx",
-        # "hit_probability_semi_realistic.csv",  # uncomment if you have a CSV instead
+        "hit_probability_semi_realistic.csv",
     ]
     for fname in candidates:
         if os.path.exists(fname):
@@ -45,7 +46,6 @@ def load_builtin_hit_history() -> pd.DataFrame:
                 return pd.read_csv(fname)
             else:
                 return pd.read_excel(fname)
-    # If nothing found, raise so the UI can tell the user to upload
     raise FileNotFoundError("No built-in hit probability file found.")
 
 

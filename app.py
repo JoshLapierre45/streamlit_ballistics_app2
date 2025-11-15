@@ -16,9 +16,31 @@ def load_ballistics():
     return pd.read_excel("Ballistics.xlsx")
 
 @st.cache_data
+@st.cache_data
 def load_default_hit_prob():
-    # Change to read_csv(...) if your built-in file is actually a CSV
-    return pd.read_excel("hit_probability_semi_realistic.xlsx")
+    # Try several possible locations / formats
+    candidates = [
+        os.path.join("Data", "hit_probability_semi_realistic.xlsx"),
+        os.path.join("Data", "hit_probability_semi_realistic.csv"),
+        "hit_probability_semi_realistic.xlsx",
+        "hit_probability_semi_realistic.csv",
+    ]
+
+    for path in candidates:
+        if os.path.exists(path):
+            if path.lower().endswith(".csv"):
+                return pd.read_csv(path)
+            else:
+                return pd.read_excel(path)
+
+    # If we get here, nothing was found
+    st.error(
+        "No built-in hit probability file found. "
+        "Expected one of: hit_probability_semi_realistic.[xlsx/csv] "
+        "in the current folder or Data/."
+    )
+    return pd.DataFrame()
+
 
 # Hit probability: auto-load built-in, allow optional override upload
 uploaded_hit = st.file_uploader(

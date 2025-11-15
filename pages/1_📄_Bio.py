@@ -11,7 +11,7 @@ with col2:
     st.subheader("Hi, I’m Josh Lapierre")
     st.write("""
 I’m a data practitioner focused on applied analytics and interactive visualization. 
-I enjoy turning messy, real-world data into useful tools—especially when accuracy, 
+I enjoy turning messy, real-world data into useful tools, especially when accuracy, 
 clarity, and speed matter (like ballistics!). I work primarily with **Python**, **Pandas**, 
 **Altair/Plotly**, and **Streamlit**, and I’m comfortable with scikit-learn for modeling.
     """)
@@ -20,6 +20,6 @@ clarity, and speed matter (like ballistics!). I work primarily with **Python**, 
 - Coursework: Data Visualization, Statistics, ML fundamentals
 - Tools: Python, Pandas, Altair, Plotly, Streamlit, scikit-learn
 - Interests: Ballistics modeling, calibration/uncertainty, dashboards
-- Strengths: Clear storytelling, reproducible analysis, pragmatic UX
+- Strengths: Clear storytelling, reproducible analysis
     """)
 

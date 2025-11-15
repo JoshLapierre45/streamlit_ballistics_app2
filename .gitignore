@@ -1,8 +1,41 @@
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
 .venv/
-.env/
+venv/
+ENV/
+env/
+
+# Streamlit
 .streamlit/
-.altair-data/
-*.pyc
+
+# VSCode
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+npm-debug.log
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Cache
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.cache/
+cache/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
