@@ -1,0 +1,20 @@
+Column,Type,Description,Example
+shooter_id,string,"Unique shooter identifier (e.g., initials or handle)",josh
+date,date,Date of firing session or shot,2025-10-28
+rifle_id,string,Unique rifle name or configuration ID,7mmPRC-Carbon
+range_yd,numeric,Target distance in yards,800
+mv_fps,numeric,Average muzzle velocity in feet per second,2990
+mv_sd,numeric,Velocity standard deviation (fps),9.0
+wind_mph,numeric,Wind speed in miles per hour,12.0
+wind_dir_deg,numeric,Wind direction in degrees (from),250
+DA_ft,numeric,Density altitude in feet,8200
+temp_F,numeric,Ambient temperature in Fahrenheit,55.0
+pressure_inHg,numeric,Station pressure in inches of mercury,24.7
+rh_pct,numeric,Relative humidity in percent,18.0
+group_moa,numeric,Observed rifle/load group size in MOA,0.8
+rest,categorical,Shooting support type,prone_bag
+target_size_moa,numeric,Target angular size in MOA,1.0
+shot_id,string,Unique shot identifier within session,2025-10-28-0007
+outcome,binary (0/1),Hit (1) or miss (0) outcome,1
+shots,integer (agg only),Total number of shots (aggregate data only),10
+hits,integer (agg only),Total number of hits (aggregate data only),7
