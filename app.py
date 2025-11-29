@@ -1,5 +1,7 @@
 import streamlit as st
 from model import HitProbabilityModel
+import numpy as np
+import matplotlib.pyplot as plt
 
 @st.cache_resource
 def load_hit_model():
@@ -25,6 +27,65 @@ with col2:
     pressure_inHg = st.number_input("Pressure (inHg)", 25.00, 32.00, 29.92, 0.01)
     rh_pct = st.number_input("Relative humidity (%)", 0, 100, 40, 1)
 
+def simulate_group_from_prob(
+    hit_prob: float,
+    target_radius_moa: float,
+    n_shots: int = 5,
+    miss_radius_factor: float = 3.0,
+):
+    """
+    Simulate n_shots impact points given a hit probability.
+    Returns list of dicts: {"x": float, "y": float, "hit": bool}
+    Coordinates are in MOA relative to point of aim.
+    """
+
+    shots = []
+    hit_prob = float(np.clip(hit_prob, 0.0, 1.0))
+
+    for _ in range(n_shots):
+        is_hit = np.random.rand() < hit_prob
+
+        # Random angle
+        theta = 2 * np.pi * np.random.rand()
+
+        if is_hit:
+            # Hits: uniformly inside target radius
+            r = target_radius_moa * np.sqrt(np.random.rand())
+        else:
+            # Misses: uniformly outside target
+            r_inner = target_radius_moa
+            r_outer = target_radius_moa * miss_radius_factor
+            r = np.sqrt((r_outer**2 - r_inner**2) * np.random.rand() + r_inner**2)
+
+        x = r * np.cos(theta)
+        y = r * np.sin(theta)
+
+        shots.append({"x": x, "y": y, "hit": is_hit})
+
+    return shots
+
+def plot_group(shots, target_radius_moa, title="Simulated 5-shot group"):
+    fig, ax = plt.subplots(figsize=(4, 4))
+
+    # Target (circle)
+    circle = plt.Circle((0, 0), target_radius_moa, fill=False, linewidth=2)
+    ax.add_patch(circle)
+
+    # Plot shots
+    for s in shots:
+        color = "tab:green" if s["hit"] else "tab:red"
+        ax.scatter(s["x"], s["y"], c=color, s=60, edgecolors="black", zorder=3)
+
+    ax.set_aspect("equal")
+    margin = target_radius_moa * 3.2
+    ax.set_xlim(-margin, margin)
+    ax.set_ylim(-margin, margin)
+    ax.set_xlabel("Horizontal Offset (MOA)")
+    ax.set_ylabel("Vertical Offset (MOA)")
+    ax.set_title(title)
+
+    st.pyplot(fig)
+
 if st.button("Estimate hit probability"):
     features = {
         "range_yd": range_yd,
@@ -49,3 +110,22 @@ if st.button("Estimate hit probability"):
         "model trained on semi-realistic simulated shooting data."
     )
 
+    # -----------------------------
+    # NEW: Simulated 5-shot group
+    # -----------------------------
+    st.subheader("Simulated 5-shot Group Visualization")
+
+    target_radius_moa = target_size_moa / 2.0
+
+    shots = simulate_group_from_prob(
+        hit_prob=prob,
+        target_radius_moa=target_radius_moa,
+        n_shots=5,
+        miss_radius_factor=3.0,
+    )
+
+    plot_group(
+        shots,
+        target_radius_moa,
+        title=f"Simulated Group (Hit Prob = {prob*100:.1f}%)"
+    )
