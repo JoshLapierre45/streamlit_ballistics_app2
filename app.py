@@ -2,6 +2,8 @@ import streamlit as st
 from model import HitProbabilityModel
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+import altair as alt   # ✅ NEW
 
 @st.cache_resource
 def load_hit_model():
@@ -87,6 +89,7 @@ def plot_group(shots, target_radius_moa, title="Simulated 5-shot group"):
     st.pyplot(fig)
 
 if st.button("Estimate hit probability"):
+    # Base feature dict for current user inputs
     features = {
         "range_yd": range_yd,
         "mv_fps": mv_fps,
@@ -100,6 +103,7 @@ if st.button("Estimate hit probability"):
         "target_size_moa": target_size_moa,
     }
 
+    # --- Single prediction for current range ---
     prob = hit_model.predict_proba_single(features)
 
     st.metric("Estimated hit probability", f"{prob * 100:.1f}%")
@@ -111,7 +115,7 @@ if st.button("Estimate hit probability"):
     )
 
     # -----------------------------
-    # NEW: Simulated 5-shot group
+    # Simulated 5-shot group
     # -----------------------------
     st.subheader("Simulated 5-shot Group Visualization")
 
@@ -129,3 +133,29 @@ if st.button("Estimate hit probability"):
         target_radius_moa,
         title=f"Simulated Group (Hit Prob = {prob*100:.1f}%)"
     )
+
+    # -----------------------------
+    # NEW: Probability vs Range curve
+    # -----------------------------
+    st.subheader("Hit Probability vs Range")
+
+    ranges = list(range(100, 1501, 50))
+    probs_curve = []
+
+    for r in ranges:
+        f_r = dict(features)          # copy base features
+        f_r["range_yd"] = r           # vary only range
+        p_r = hit_model.predict_proba_single(f_r)
+        probs_curve.append(p_r)
+
+    df = pd.DataFrame({
+        "Range (yd)": ranges,
+        "Hit Probability": probs_curve,
+    })
+
+    chart = alt.Chart(df).mark_line().encode(
+        x="Range (yd)",
+        y=alt.Y("Hit Probability", axis=alt.Axis(format=".0%"))
+    )
+
+    st.altair_chart(chart, use_container_width=True)

@@ -20,3 +20,13 @@ This project is submitted as **Option C: Build a Web-App for a Machine Learning 
 ```bash
 git clone <your-repo-url>.git
 cd streamlit_ballistics_app
+
+## 2. How to Run
+
+### Local
+1. Clone the repo.
+2. Create and activate a virtual environment.
+3. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt

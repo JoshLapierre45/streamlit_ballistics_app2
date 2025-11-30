@@ -11,6 +11,14 @@ class HitProbabilityModel:
     """
     Wrapper for the trained classifier predicting hit probability
     given shooting and environmental conditions.
+    Logistic regression model estimating hit probability for long-range shooting.
+
+    Trained on semi-realistic simulated data using features:
+    - range_yd
+    - muzzle velocity & SD
+    - group size (MOA)
+    - target size (MOA)
+    - crosswind (mph)
     """
 
     def __init__(self, model_path: Path = MODEL_PATH):
