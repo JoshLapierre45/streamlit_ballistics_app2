@@ -134,9 +134,7 @@ if st.button("Estimate hit probability"):
         title=f"Simulated Group (Hit Prob = {prob*100:.1f}%)"
     )
 
-    # -----------------------------
-    # NEW: Probability vs Range curve
-    # -----------------------------
+    # Probability vs Range curve
     st.subheader("Hit Probability vs Range")
 
     ranges = list(range(100, 1501, 50))

@@ -101,7 +101,6 @@ def featurize(df: pd.DataFrame) -> pd.DataFrame:
     out["range_x_target"] = out["range_yd"] * out["target_size_moa"]
     out["group_x_range"]  = out["group_moa"] * out["range_yd"]
 
-    # If any are entirely NaN due to missing inputs, fill with 0 so the scaler/fit won’t fail
     for c in ["range_sq","wind_sq","range_x_wind","range_x_target","group_x_range"]:
         if c in out.columns:
             out[c] = pd.to_numeric(out[c], errors="coerce").fillna(0.0)
@@ -172,7 +171,7 @@ def render():
             return bail(f"Could not read uploaded CSV: {e}", "error")
         st.caption(f"Using uploaded hit history: {uploaded.name}")
 
-    # Case 2: no upload → fall back to built-in dataset
+    # Case 2: no upload fall back to built-in dataset
     else:
         try:
             raw = load_builtin_hit_history()
