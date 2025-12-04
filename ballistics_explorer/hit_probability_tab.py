@@ -17,17 +17,13 @@ from sklearn.metrics import log_loss
 REQ_COLS_PER_SHOT = [
     "shooter_id","date","rifle_id","range_yd","mv_fps","mv_sd",
     "wind_mph","wind_dir_deg","DA_ft","temp_F","pressure_inHg","rh_pct",
-    "group_moa","rest","target_size_moa","shot_id","outcome"
+    "group_moa","target_size_moa","shot_id","outcome"
 ]
 REQ_COLS_AGG = [
     "shooter_id","date","rifle_id","range_yd","mv_fps","mv_sd",
     "wind_mph","wind_dir_deg","DA_ft","temp_F","pressure_inHg","rh_pct",
-    "group_moa","rest","target_size_moa","shots","hits"
+    "group_moa","target_size_moa","shots","hits"
 ]
-
-REST_MAP = {
-    "prone_bag": 2, "bipod": 1, "bench": 2, "offhand": 0, "tripod": 1, "unknown": 1
-}
 
 @st.cache_data
 def load_builtin_hit_history() -> pd.DataFrame:
@@ -35,10 +31,10 @@ def load_builtin_hit_history() -> pd.DataFrame:
     Load the default hit-probability dataset that ships with the app.
     """
     candidates = [
-        os.path.join("Data", "hit_probability_semi_realistic.xlsx"),
-        os.path.join("Data", "hit_probability_semi_realistic.csv"),
-        "hit_probability_semi_realistic.xlsx",
-        "hit_probability_semi_realistic.csv",
+        os.path.join("Data", "hit_probability_cleaned.xlsx"),
+        os.path.join("Data", "hit_probability_cleaned.csv"),
+        "hit_probability_cleaned.xlsx",
+        "hit_probability_cleaned.csv",
     ]
     for fname in candidates:
         if os.path.exists(fname):
@@ -88,12 +84,6 @@ def featurize(df: pd.DataFrame) -> pd.DataFrame:
     out["wind_cross_mph"] = out["wind_mph"] * np.sin(th)
     out["wind_head_mph"]  = out["wind_mph"] * np.cos(th)
 
-    # Rest encoding
-    out["rest_norm"] = (
-        out["rest"].astype(str).str.lower().map(REST_MAP).fillna(1).astype(int)
-        if "rest" in out.columns else 1
-    )
-
     # ---- Curvature & interactions to help logistic regression ----
     out["range_sq"]       = out["range_yd"]**2
     out["wind_sq"]        = out["wind_mph"]**2
@@ -113,7 +103,7 @@ def make_feature_matrix(df: pd.DataFrame):
         "range_yd","mv_fps","mv_sd",
         "wind_cross_mph","wind_head_mph",
         "DA_ft","temp_F","pressure_inHg","rh_pct",
-        "group_moa","target_size_moa","rest_norm",
+        "group_moa","target_size_moa",
         "range_sq","wind_sq","range_x_wind","range_x_target","group_x_range"
     ]
     X = df[feature_cols].astype(float)
@@ -263,16 +253,53 @@ def render():
 
     # ---- Evaluate: Log Loss only ----
     pte = model.predict_proba(Xte)[:, 1]
+
+    # Compute log loss safely
     try:
         loss = log_loss(yte, pte)
     except ValueError:
         loss = float("nan")
 
+    # --- Reliability checks ---
+    n_test = len(yte)
+    class_diversity = yte.nunique()
+    high_loss = loss > 1.5 if np.isfinite(loss) else False
+
+    # Determine what to show
+    if n_test < 10:
+        loss_display = "—"
+        help_text = (
+            "Not enough test samples in this filter for reliable calibration. "
+            "Log loss is suppressed to avoid misleading results."
+        )
+
+    elif class_diversity < 2:
+        loss_display = "—"
+        help_text = (
+            "Only one class present in this filtered subset. "
+            "Log loss is undefined and not displayed."
+        )
+
+    elif high_loss:
+        loss_display = f"{loss:.4f}"
+        help_text = (
+            "High log loss: the model is poorly calibrated for this specific subset. "
+            "This usually happens when the model assigns confident probabilities "
+            "that disagree with the actual outcomes in this slice."
+        )
+
+    else:
+        loss_display = f"{loss:.4f}"
+        help_text = (
+            "Cross-entropy log loss. Lower is better. Measures probability calibration."
+        )
+
+    # ---- Display ----
     with st.expander("Model performance", expanded=True):
         st.metric(
             "Log Loss",
-            f"{loss:.4f}" if np.isfinite(loss) else "—",
-            help="Cross-entropy; lower is better. Penalizes confident wrong predictions most."
+            loss_display,
+            help=help_text
         )
 
     # ---- SHAP feature importance ----
@@ -287,7 +314,11 @@ def render():
             expl_lr.fit(Xtr_scaled, ytr)
 
             # Use LinearExplainer for logistic regression
-            explainer = shap.LinearExplainer(expl_lr, Xtr_scaled, feature_names=feature_cols)
+            explainer = shap.LinearExplainer(
+                expl_lr,
+                Xtr_scaled,
+                feature_names=feature_cols
+            )
             shap_values = explainer.shap_values(Xtr_scaled)
 
             st.caption("Higher SHAP value → higher predicted hit probability for that feature value.")
@@ -307,7 +338,6 @@ def render():
 
     # ---- Predict UI ----
     show_predict_ui(model, df)
-
 
 
 def show_predict_ui(model, df):
@@ -333,8 +363,6 @@ def show_predict_ui(model, df):
         press = st.number_input("Pressure (inHg)", value=_med("pressure_inHg", 24.8), key="hitprob_press")
         rh    = st.number_input("RH (%)", value=_med("rh_pct", 20.0), key="hitprob_rh")
 
-    rest_str = st.selectbox("Rest", options=list(REST_MAP.keys()), index=1, key="hitprob_rest")
-
     # Range band from existing data if possible
     rmin = int(df["range_yd"].min()) if "range_yd" in df.columns else 100
     rmax = int(df["range_yd"].max()) if "range_yd" in df.columns else 1000
@@ -352,7 +380,6 @@ def show_predict_ui(model, df):
     th = np.deg2rad(wind_dir)
     wind_cross = wind_mph * np.sin(th)
     wind_head  = wind_mph * np.cos(th)
-    rest_norm = REST_MAP.get(rest_str, 1)
 
     pred_df = pd.DataFrame({
         "range_yd": ranges,
@@ -366,7 +393,6 @@ def show_predict_ui(model, df):
         "rh_pct": rh,
         "group_moa": group,
         "target_size_moa": target_moa,
-        "rest_norm": rest_norm,
     })
 
     # ---- Add engineered features ----
@@ -381,7 +407,7 @@ def show_predict_ui(model, df):
         "range_yd","mv_fps","mv_sd",
         "wind_cross_mph","wind_head_mph",
         "DA_ft","temp_F","pressure_inHg","rh_pct",
-        "group_moa","target_size_moa","rest_norm",
+        "group_moa","target_size_moa",
         "range_sq","wind_sq","range_x_wind","range_x_target","group_x_range"
     ]
     for c in needed:

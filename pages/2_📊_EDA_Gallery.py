@@ -49,7 +49,7 @@ st.subheader("Velocity vs Distance by Cartridge")
 st.markdown("_Question:_ How does **velocity** change with **distance**, and does it differ by cartridge?")
 sc = (
     alt.Chart(d)
-    .mark_point()
+    .mark_line()
     .encode(
         x=alt.X("distance_yd:Q", title="Distance (yd)"),
         y=alt.Y("retained_velocity_fps:Q", title="Velocity (fps)"),

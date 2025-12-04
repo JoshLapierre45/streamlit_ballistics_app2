@@ -18,9 +18,9 @@ import joblib
 
 def main():
     # --- Paths: go from /pages up to project root ---
-    base_dir = Path(__file__).resolve().parent.parent
-    DATA_PATH = Path(__file__).resolve().parent / "Data" / "hit_probability_cleaned.csv"
-    model_path = base_dir / "models" / "hit_model.pkl"
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    DATA_PATH = BASE_DIR / "Data" / "hit_probability_cleaned.csv"
+    MODEL_PATH = BASE_DIR / "models" / "hit_model.pkl"
 
     print(f"Loading data from: {DATA_PATH}")
 
@@ -85,15 +85,15 @@ def main():
     print("\nClassification report:\n", classification_report(y_test, y_pred))
 
     # --- 7. Save model + scaler + feature names ---
-    model_path.parent.mkdir(parents=True, exist_ok=True)
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     bundle = {
         "model": model,
         "scaler": scaler,
         "features": feature_cols,
         "target": target_col,
     }
-    joblib.dump(bundle, model_path)
-    print(f"Saved model to: {model_path}")
+    joblib.dump(bundle, MODEL_PATH)
+    print(f"Saved model to: {MODEL_PATH}")
 
 
 if __name__ == "__main__":
